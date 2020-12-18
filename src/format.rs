@@ -87,9 +87,11 @@ impl<'a> Formatter<'a> {
             match statement {
                 Statement::Import { .. } => {
                     has_imports = true;
+                    let space_before = self.pop_empty_lines(statement.location().end);
+                    let empty_line = if space_before { lines(1) } else { nil() };
                     let comments = self.pop_comments(start);
                     let statement = self.statement(statement);
-                    imports.push(commented(statement, comments))
+                    imports.push(empty_line.append(commented(statement, comments)))
                 }
 
                 _other => {

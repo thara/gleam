@@ -41,6 +41,30 @@ fn imports() {
 }
 "
     );
+
+    assert_format!(
+        "// a
+import a
+
+// b
+import b
+"
+    );
+    assert_format_rewrite!(
+        "// a
+import a
+
+
+// b
+import b
+",
+        "// a
+import a
+
+// b
+import b
+"
+    );
 }
 
 #[test]
