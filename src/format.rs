@@ -82,16 +82,21 @@ impl<'a> Formatter<'a> {
         let mut imports = Vec::new();
         let mut declarations = Vec::with_capacity(module.statements.len());
 
+        let mut import_group_boundary = Vec::new();
+        import_group_boundary.push(0);
+
         for statement in module.statements.iter() {
             let start = statement.location().start;
             match statement {
-                Statement::Import { .. } => {
+                Statement::Import { module, .. } => {
                     has_imports = true;
-                    let space_before = self.pop_empty_lines(statement.location().end);
-                    let empty_line = if space_before { lines(1) } else { nil() };
+                    let new_group = self.pop_empty_lines(statement.location().end);
+                    if new_group {
+                        import_group_boundary.push(imports.len());
+                    }
                     let comments = self.pop_comments(start);
                     let statement = self.statement(statement);
-                    imports.push(empty_line.append(commented(statement, comments)))
+                    imports.push((module, commented(statement, comments)))
                 }
 
                 _other => {
@@ -102,8 +107,20 @@ impl<'a> Formatter<'a> {
                 }
             }
         }
+        import_group_boundary.push(imports.len());
 
-        let imports = concat(imports.into_iter().intersperse(line()));
+        let import_groups = import_group_boundary
+            .iter()
+            .zip(import_group_boundary[1..].iter())
+            .into_iter()
+            .map(|(a, b)| {
+                let mut v = imports[*a..*b].to_vec();
+                v.sort_by(|(a, _), (b, _)| a.cmp(b));
+                concat(v.into_iter().map(|(_, doc)| doc).intersperse(line()))
+            });
+
+        let imports = concat(import_groups.into_iter().intersperse(lines(2)));
+
         let declarations = concat(declarations.into_iter().intersperse(lines(2)));
 
         let sep = if has_imports && has_declarations {

@@ -20,7 +20,7 @@ fn imports() {
     assert_format!("import one\n");
     assert_format!("import one\nimport two\n");
     assert_format!("import one/two/three\n");
-    assert_format!("import one/two/three\nimport four/five\n");
+    assert_format!("import four/five\nimport one/two/three\n");
     assert_format!("import one.{fun, fun2, fun3}\n");
     assert_format!("import one.{One, Two, fun1, fun2}\n");
     assert_format!("import one.{main as entrypoint}\n");
@@ -64,6 +64,52 @@ import a
 // b
 import b
 "
+    );
+
+    assert_format_rewrite!(
+        "// a
+import a
+// c
+import c
+// b1
+// b2
+import b
+",
+        "// a
+import a
+// b1
+// b2
+import b
+// c
+import c
+",
+    );
+    assert_format_rewrite!(
+        "import c
+import a
+
+// d
+import d
+// b
+import b
+
+
+import f
+// e
+import e
+",
+        "import a
+import c
+
+// b
+import b
+// d
+import d
+
+// e
+import e
+import f
+",
     );
 }
 
